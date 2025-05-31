@@ -1,0 +1,16 @@
+import "runtime/env"
+import "runtime/builtins"
+
+fn eval(commands, env) {
+  for cmd in commands {
+    if cmd.kind == "let" {
+      let value = evaluate(cmd.value, env)
+      set(env, cmd.name, value)
+    } else if cmd.kind == "call" {
+      if cmd.target == "print" {
+        let args = [evaluate(arg, env) for arg in cmd.args]
+        print(args[0])
+      }
+    }
+  }
+}

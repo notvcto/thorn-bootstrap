@@ -1,0 +1,7 @@
+type Command {
+  kind: "let" | "call",
+  name?: String,
+  value?: any,
+  target?: String,
+  args?: List
+}

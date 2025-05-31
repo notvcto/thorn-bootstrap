@@ -1,0 +1,8 @@
+fn print(msg) {
+  # This would call a built-in print mechanism in host
+  _builtin_print(msg)
+}
+
+fn panic(msg) {
+  _builtin_error(msg)
+}

@@ -1,0 +1,9 @@
+import "runtime/env"
+import "runtime/builtins"
+import "interpreter/eval"
+
+let source = read("programs/hello.thorn")
+let commands = parse(source)     # to be built later
+let env = create_env()
+
+eval(commands, env)
