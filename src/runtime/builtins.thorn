@@ -1,8 +1,27 @@
-fn print(msg) {
-  # This would call a built-in print mechanism in host
-  _builtin_print(msg)
+# Built-in function simulations (to be replaced with actual I/O later)
+
+# Simulate printing to screen
+fn _builtin_print(msg) {
+  # For now, just outputting a known marker for validation
+  output("[PRINT] " + msg)
 }
 
-fn panic(msg) {
-  _builtin_error(msg)
+# Simulate error/panic
+fn _builtin_error(msg) {
+  output("[ERROR] " + msg)
+}
+
+# Simulate file reading (stubbed)
+fn _builtin_read(path) {
+  if path == "programs/hello.thorn" {
+    return "let name = \"Thorn\"\nprint(\"Hello, \" + name)"
+  } else {
+    panic("File not found: " + path)
+  }
+}
+
+# For now, output to console — this lets you see results directly
+fn output(line) {
+  # You can later route this to an internal log buffer
+  syscall_print(line)
 }

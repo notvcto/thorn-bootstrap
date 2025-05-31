@@ -1,0 +1,5 @@
+fn syscall_print(msg) {
+  # Temporary simulation: print directly
+  # In a real bootstrapped world, this might call native terminal I/O
+  echo(msg)
+}

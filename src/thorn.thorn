@@ -1,9 +1,13 @@
 import "runtime/env"
 import "runtime/builtins"
+import "interpreter/command"
 import "interpreter/eval"
 
-let source = read("programs/hello.thorn")
-let commands = parse(source)     # to be built later
 let env = create_env()
+
+let commands = [
+  Command(kind="let", name="name", value='"Thorn"'),
+  Command(kind="call", target="print", args=[["+", '"Hello, "', "name"]])
+]
 
 eval(commands, env)

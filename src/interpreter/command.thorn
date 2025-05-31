@@ -5,3 +5,13 @@ type Command {
   target?: String,
   args?: List
 }
+
+fn Command(kind, name=null, value=null, target=null, args=null) {
+  return {
+    kind: kind,
+    name: name,
+    value: value,
+    target: target,
+    args: args
+  }
+}

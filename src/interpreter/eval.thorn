@@ -6,6 +6,7 @@ fn eval(commands, env) {
     if cmd.kind == "let" {
       let value = evaluate(cmd.value, env)
       set(env, cmd.name, value)
+
     } else if cmd.kind == "call" {
       if cmd.target == "print" {
         let args = [evaluate(arg, env) for arg in cmd.args]
@@ -13,4 +14,25 @@ fn eval(commands, env) {
       }
     }
   }
+}
+
+
+fn evaluate(expr, env) {
+  if typeof(expr) == "String" {
+    if expr.starts_with('"') && expr.ends_with('"') {
+      return expr.slice(1, -1)  # strip quotes
+    } else {
+      return get(env, expr)  # variable reference
+    }
+  }
+
+  if typeof(expr) == "List" {
+    if expr[0] == "+" {
+      let left = evaluate(expr[1], env)
+      let right = evaluate(expr[2], env)
+      return left + right
+    }
+  }
+
+  return expr  # fallback
 }
