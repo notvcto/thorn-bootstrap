@@ -1,6 +1,6 @@
 import sys
 
-# Simulated Thorn environment
+# Simulated Thorn environment, not final
 env = {}
 
 def print_builtin(msg):
