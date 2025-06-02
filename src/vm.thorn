@@ -45,7 +45,7 @@ fn exec(line) {
     panic("Unknown statement: " + line)
 }
 
-fn run_file(path) {
+fn run(path) {
     let content = read(path)
     let lines = content.split("\n")
     for line in lines {
@@ -54,7 +54,3 @@ fn run_file(path) {
         }
     }
 }
-
-# Boot sequence
-run_file("programs/hello.thorn")
-

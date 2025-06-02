@@ -1,0 +1,2 @@
+let name = "Thorn VM"
+print("Hello from " + name)
