@@ -1,31 +1,4 @@
-import "runtime/env"
-import "runtime/builtins"
-import "interpreter/eval"
-import "interpreter/command"
-import "repl_helpers"
+print("Welcome to the Thorn REPL")
 
-let env = create_env()
-
-loop {
-  _builtin_print("thorn> ")
-  let line = _builtin_input()
-
-  if line == "exit" {
-    break
-  }
-
-  # Simulated parsing
-  let cmd =
-    if line starts_with "let " {
-      let name = extract_var_name(line)
-      let value = extract_var_value(line)
-      Command(kind="let", name=name, value=value)
-    } else if line starts_with "print(" {
-      let arg = extract_print_arg(line)
-      Command(kind="call", target="print", args=[arg])
-    } else {
-      panic("Unknown command")
-    }
-
-  eval([cmd], env)
-}
+let name = "Thorn"
+print("Hello, " + name)
