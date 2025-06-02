@@ -1,4 +1,0 @@
-print("Welcome to the Thorn REPL")
-
-let name = "Thorn"
-print("Hello, " + name)
