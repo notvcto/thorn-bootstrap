@@ -1,20 +1,68 @@
 # thorn.thorn
 
-# Declare the environment (just symbolic for now)
 let env = {}
 
 fn eval(expr) {
-    # This is handled by runner.py for now
+    let expr = expr.trim()
+
+    if expr.starts_with('"') and expr.ends_with('"') {
+        return expr.slice(1, -1)
+    }
+
+    if expr.contains("+") {
+        let parts = expr.split("+")
+        let result = ""
+        for part in parts {
+            result = result + eval(part.trim())
+        }
+        return result
+    }
+
+    if expr == "{}" {
+        return {}
+    }
+
+    if env.contains(expr) {
+        return env[expr]
+    }
+
+    panic("Unknown expression: " + expr)
 }
 
 fn exec(line) {
-    # This is handled by runner.py for now
+    let line = line.trim()
+
+    if line == "" or line.starts_with("#") {
+        return
+    }
+
+    if line.starts_with("let ") {
+        let eq = line.index("=")
+        let name = line.slice(4, eq).trim()
+        let value = eval(line.slice(eq + 1))
+        env[name] = value
+        return
+    }
+
+    if line.starts_with("print(") and line.ends_with(")") {
+        let inner = line.slice(6, -1)
+        print(eval(inner))
+        return
+    }
+
+    if line.starts_with("run_file(") and line.ends_with(")") {
+        let path = line.slice(9, -1).trim().slice(1, -1)
+        run_file(path)
+        return
+    }
+
+    panic("Unknown line: " + line)
 }
 
 fn run_file(path) {
     let content = read(path)
     let lines = content.split("\n")
     for line in lines {
-        # Placeholder for runner.py to execute lines
+        exec(line)
     }
 }

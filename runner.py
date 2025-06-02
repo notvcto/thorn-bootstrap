@@ -1,171 +1,92 @@
+# runner.py — meta-interpreter to bootstrap Thorn
+
 import sys
 
+# -------------------- I/O Helpers --------------------
 def read_file(path):
     with open(path, 'r', encoding='utf-8') as f:
         return f.read()
 
+# -------------------- Thorn Interpreter --------------------
 def run_thorn_interpreter_with_target(interpreter_path, target_path):
+    source = read_file(interpreter_path)
     env = {
-        "print": print,
-        "panic": lambda msg: sys.exit(f"[panic] {msg}"),
-        "read": read_file
+        'print': print,
+        'panic': lambda msg: sys.exit(f"[panic] {msg}"),
+        'read': read_file
     }
-
-    # Load interpreter source
-    lines = read_file(interpreter_path).splitlines()
-
-    # Append call to run_file("program_path")
-    lines.append(f'run_file("{target_path}")')
-
-    def eval_expr(expr):
-        expr = expr.strip()
-
-        # String literal
-        if expr.startswith('"') and expr.endswith('"'):
-            return expr[1:-1]
-
-        # Concatenation with +
-        if "+" in expr:
-            parts = [eval_expr(p.strip()) for p in expr.split("+")]
-            return "".join(parts)
-
-        # Empty dict literal
-        if expr == "{}":
-            return {}
-
-        # Function call
-        if expr.endswith(")") and "(" in expr:
-            fname, argstr = expr.split("(", 1)
-            fname = fname.strip()
-            args = [eval_expr(a.strip()) for a in argstr[:-1].split(",") if a.strip()]
-            if fname in env and callable(env[fname]):
-                return env[fname](*args)
-
-        # Variable lookup
-        if expr in env:
-            return env[expr]
-
-        raise Exception(f"Unknown expression: {expr}")
-
-    def parse_block(start_idx, lines):
-        block = []
-        depth = 0
-        i = start_idx
-        while i < len(lines):
-            line = lines[i].strip()
-            if "{" in line:
-                depth += line.count("{")
-            if "}" in line:
-                depth -= line.count("}")
-            block.append(line)
-            if depth == 0:
-                break
-            i += 1
-        return block, i
-
-    def exec_line(line):
-        line = line.strip()
-        if not line or line.startswith("#"):
-            return
-
-        if line.startswith("let "):
-            name_val = line[4:].split("=", 1)
-            name = name_val[0].strip()
-            value = eval_expr(name_val[1])
-            env[name] = value
-            return
-
-        if line.startswith("print(") and line.endswith(")"):
-            inner = line[6:-1]
-            print(eval_expr(inner))
-            return
-
-        if line.startswith("run_file(") and line.endswith(")"):
-            path = line[9:-1].strip('"')
-            nested_lines = read_file(path).splitlines()
-            for nested in nested_lines:
-                exec_line(nested)
-            return
-
-        raise Exception(f"Unknown line: {line}")
-
+    
+    # -------------------- Parsing --------------------
+    functions = {}
+    lines = source.splitlines()
     i = 0
+    
+    def parse_fn():
+        nonlocal i
+        header = lines[i]
+        name = header.split()[1].split('(')[0].strip()
+        body = []
+        i += 1
+        while i < len(lines) and not lines[i].startswith('fn'):
+            if lines[i].strip() != '':
+                body.append(lines[i].strip())
+            i += 1
+        functions[name] = body
+
     while i < len(lines):
         line = lines[i].strip()
-        if line.startswith("fn "):
-            # e.g. fn name(arg) {
-            header = line[3:].split("(", 1)
-            fname = header[0].strip()
-            args = header[1].split(")", 1)[0].strip().split(",")
-            args = [a.strip() for a in args if a.strip()]
-            block, new_i = parse_block(i, lines)
-            body = block[1:-1]  # remove opening and closing braces
-            def make_fn(args, body):
-                def _fn(*passed_args):
-                    local_env = env.copy()
-                    for k, v in zip(args, passed_args):
-                        local_env[k] = v
-                    for bl in body:
-                        exec_line_in_env(bl, local_env)
-                return _fn
-            env[fname] = make_fn(args, body)
-            i = new_i + 1
-            continue
+        if line.startswith('fn '):
+            parse_fn()
+        else:
+            i += 1
 
-        exec_line(line)
-        i += 1
-
-    def exec_line_in_env(line, local_env):
-        line = line.strip()
-        if not line or line.startswith("#"):
-            return
-
-        if line.startswith("let "):
-            name_val = line[4:].split("=", 1)
-            name = name_val[0].strip()
-            value = eval_expr_with_env(name_val[1], local_env)
-            local_env[name] = value
-            return
-
-        if line.startswith("print(") and line.endswith(")"):
-            inner = line[6:-1]
-            print(eval_expr_with_env(inner, local_env))
-            return
-
-        if line.startswith("run_file(") and line.endswith(")"):
-            path = line[9:-1].strip('"')
-            nested_lines = read_file(path).splitlines()
-            for nested in nested_lines:
-                exec_line_in_env(nested, local_env)
-            return
-
-        raise Exception(f"Unknown line in fn: {line}")
-
-    def eval_expr_with_env(expr, local_env):
+    # -------------------- Evaluator --------------------
+    def eval_expr(expr, local_env):
         expr = expr.strip()
-
         if expr.startswith('"') and expr.endswith('"'):
             return expr[1:-1]
-
-        if "+" in expr:
-            parts = [eval_expr_with_env(p.strip(), local_env) for p in expr.split("+")]
-            return "".join(parts)
-
-        if expr == "{}":
+        if '+' in expr:
+            parts = [eval_expr(p.strip(), local_env) for p in expr.split('+')]
+            return ''.join(parts)
+        if expr == '{}':
             return {}
-
-        if expr.endswith(")") and "(" in expr:
-            fname, argstr = expr.split("(", 1)
-            fname = fname.strip()
-            args = [eval_expr_with_env(a.strip(), local_env) for a in argstr[:-1].split(",") if a.strip()]
-            if fname in local_env and callable(local_env[fname]):
-                return local_env[fname](*args)
-
         if expr in local_env:
             return local_env[expr]
+        if expr in env:
+            return env[expr]
+        raise Exception(f"Unknown expression: {expr}")
 
-        raise Exception(f"Unknown expression in fn: {expr}")
+    def exec_line(line, local_env):
+        if line.startswith('let '):
+            name_val = line[4:].split('=', 1)
+            name = name_val[0].strip()
+            value = eval_expr(name_val[1], local_env)
+            local_env[name] = value
+        elif line.startswith('print(') and line.endswith(')'):
+            inner = line[6:-1]
+            print(eval_expr(inner, local_env))
+        elif line.startswith('run_file(') and line.endswith(')'):
+            path = eval_expr(line[9:-1], local_env)
+            run_thorn_interpreter_with_target(interpreter_path, path)
+        else:
+            # Fallback for custom function calls (future)
+            pass
 
+    # -------------------- Run Entry Function --------------------
+    if 'run_file' not in functions:
+        raise Exception("No run_file(path) function found in thorn.thorn")
+
+    file_code = read_file(target_path)
+    target_lines = file_code.splitlines()
+    
+    local_env = dict(env)  # initial scope with builtins
+    local_env['lines'] = target_lines
+    local_env['path'] = target_path
+
+    for line in target_lines:
+        exec_line(line.strip(), local_env)
+
+# -------------------- Entry Point --------------------
 if __name__ == "__main__":
     if len(sys.argv) != 2:
         print("Usage: python runner.py <thorn_program_file>")
